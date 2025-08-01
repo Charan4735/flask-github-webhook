@@ -1,38 +1,48 @@
-from flask import Flask, request
-import json
-import requests
 import os
+import requests
+from flask import Flask, request
+from github_webhook import Webhook
 
 app = Flask(__name__)
-SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")  # Fetch from Render env vars
+webhook = Webhook(app)
 
-@app.route('/github', methods=['POST'])
-def github_webhook():
-    payload = request.json
-    pusher_name = payload.get('pusher', {}).get('name')
-    commits = payload.get('commits', [])
+SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
+GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 
-    message = f"*{pusher_name}* pushed {len(commits)} commit(s):\n"
-    
+@webhook.hook()
+def on_push(data):
+    repo_name = data["repository"]["full_name"]
+    pusher_name = data["pusher"]["name"]
+    commits = data["commits"]
+
+    message = f"*New push to* `{repo_name}` by *{pusher_name}*:\n\n"
+
     for commit in commits:
-        message += f"\n*Commit:* {commit['message']}\n"
-        message += f"*URL:* {commit['url']}\n"
-        added = commit.get('added', [])
-        modified = commit.get('modified', [])
-        removed = commit.get('removed', [])
-        
-        if added:
-            message += f"➕ *Added:* {', '.join(added)}\n"
-        if modified:
-            message += f"📝 *Modified:* {', '.join(modified)}\n"
-        if removed:
-            message += f"❌ *Removed:* {', '.join(removed)}\n"
+        commit_id = commit["id"][:7]
+        commit_msg = commit["message"]
+        author = commit["author"]["name"]
+        url = commit["url"].replace("api.", "").replace("repos/", "").replace("commits", "commit")
 
-    # Send to Slack
-    if SLACK_WEBHOOK_URL:
-        requests.post(SLACK_WEBHOOK_URL, data=json.dumps({'text': message}),
-                      headers={'Content-Type': 'application/json'})
-    else:
-        print("Slack webhook URL not set.")
+        # Fetch diff using GitHub API
+        headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3.diff"
+        }
+        diff_resp = requests.get(commit["url"], headers=headers)
+        if diff_resp.status_code == 200:
+            diff_text = diff_resp.text[:1000]  # Limit characters to avoid Slack overflow
+        else:
+            diff_text = "_Could not fetch diff_"
 
-    return '', 200
+        message += f":bookmark_tabs: *Commit:* <{url}|`{commit_id}`> by `{author}`\n"
+        message += f"> {commit_msg}\n"
+        message += f"```{diff_text}```\n"
+
+    send_to_slack(message)
+
+def send_to_slack(msg):
+    requests.post(SLACK_WEBHOOK_URL, json={"text": msg})
+
+@app.route("/")
+def index():
+    return "GitHub webhook listener running!"
