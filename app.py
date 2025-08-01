@@ -17,4 +17,4 @@ def github_webhook():
         "text": f"📦 *{repo}* was updated by *{pusher}*:\n{commit_messages}"
     }
     requests.post(SLACK_WEBHOOK_URL, json=slack_msg)
-    return jsonify({"status": "Message sent to Slack Private Channel"}), 200
+    return jsonify({"status": "Message sent to Slack Prvt Channel"}), 200
