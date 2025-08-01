@@ -1,4 +1,5 @@
 Flask
 requests
 gunicorn
-github-webhook==<version_number>
+github-webhook==1.0.2  # or whatever is latest
+
