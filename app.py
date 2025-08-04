@@ -45,4 +45,4 @@ def send_to_slack(msg):
 
 @app.route("/")
 def index():
-    return "GitHub webhook listener is running successfully"
+    return "GitHub webhook listener is running successfully in web"
