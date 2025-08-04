@@ -9,7 +9,7 @@ webhook = Webhook(app)
 SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 
-@webhook.hook()
+@webhook.hook("/github")
 def on_push(data):
     repo_name = data["repository"]["full_name"]
     pusher_name = data["pusher"]["name"]
