@@ -4,12 +4,12 @@ from flask import Flask, request
 from github_webhook import Webhook
 
 app = Flask(__name__)
-webhook = Webhook(app)
+webhook = Webhook(app, endpoint="/github")
 
 SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 
-@webhook.hook("/github")
+@webhook.hook()
 def on_push(data):
     repo_name = data["repository"]["full_name"]
     pusher_name = data["pusher"]["name"]
