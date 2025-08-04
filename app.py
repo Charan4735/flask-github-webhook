@@ -14,7 +14,7 @@ def on_push(data):
     repo_name = data["repository"]["full_name"]
     pusher_name = data["pusher"]["name"]
     commits = data["commits"]
-
+ 
     message = f"*New push to* `{repo_name}` by *{pusher_name}*:\n\n"
 
     for commit in commits:
@@ -45,4 +45,4 @@ def send_to_slack(msg):
 
 @app.route("/")
 def index():
-    return "GitHub webhook listener is running"
+    return "GitHub webhook listener is running successfully"
